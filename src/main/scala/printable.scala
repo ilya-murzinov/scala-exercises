@@ -1,5 +1,10 @@
-trait Printable[A] {
+trait Printable[A] { self =>
   def format(a: A): String
+
+  def contramap[B](func: B => A): Printable[B] =
+    new Printable[B] {
+      def format(value: B): String = self.format(func(value))
+    }
 }
 
 object Printable {
@@ -22,5 +27,8 @@ object PrintableInstances {
   }
   implicit val intPrintable = new Printable[Int] {
     def format(a: Int) = a.toString
+  }
+  implicit val booleanPrintable = new Printable[Boolean] {
+    def format(value: Boolean): String = if (value) "yes" else "no"
   }
 }
