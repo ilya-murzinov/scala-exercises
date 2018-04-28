@@ -13,5 +13,6 @@ lazy val root = (project in file(".")).
       catsLaws,
       catsTestkit,
       scalaTest,
-      scalaCheck)
+      scalaCheck,
+      scalaCheckShapeless)
   )
