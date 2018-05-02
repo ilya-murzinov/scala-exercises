@@ -1,4 +1,3 @@
-import cats._
 import cats.data._
 import cats.syntax.applicative._
 

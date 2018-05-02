@@ -1,11 +1,24 @@
-import cats._
+import cats.Id
+import cats.Monad
+
+import scala.annotation.tailrec
+
+object monad {
+  import cats.implicits._
+
+  def product[M[_]: Monad, A, B](mx: M[A], my: M[B]): M[(A, B)] =
+    for {
+      x <- mx
+      y <- my
+    } yield (x, y)
+}
 
 object id {
   trait MyMonad[F[_]] {
     def pure[A](a: A): F[A]
-    
+
     def flatMap[A, B](value: F[A])(func: A => F[B]): F[B]
-    
+
     def map[A, B](value: F[A])(func: A => B): F[B] = flatMap(value)(func andThen pure)
   }
 
@@ -20,6 +33,7 @@ object id {
 
     override def flatMap[A, B](fa: Id[A])(f: A => Id[B]): Id[B] = f(fa)
 
+    @tailrec
     override def tailRecM[A, B](a: A)(f: A => Id[Either[A, B]]): Id[B] =
       f(a) match {
         case Left(v) => tailRecM(v)(f)
