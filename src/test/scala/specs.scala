@@ -592,9 +592,7 @@ class GCounterSpec extends Spec {
         case (k, v) =>
           (k, v.max(m1.getOrElse(k, 0)))
       }
-      val res = gcounterInstance[Map, String, Int].merge(m1, m2)
-      println(s"m1: $m1, m2: $m2, EXP: $expected, RES: $res")
-      Eq.eqv(res, expected) shouldBe true
+      Eq.eqv(gcounterInstance[Map, String, Int].merge(m1, m2), expected) shouldBe true
     }
   }
 
@@ -628,18 +626,5 @@ class GCounterSpec extends Spec {
     forAll { m: Map[String, Int] =>
       Eq.eqv(gcounterInstance[Map, String, Int].total(m), m.values.sum) shouldBe true
     }
-  }
-}
-
-class AAAAA extends Test {
-  import cats.Eq
-  import cats.kernel.instances.map._
-  import gcounter._
-  import boundedSemilattice._
-
-  implicit val intEq: Eq[Int] = (x: Int, y: Int) => x == y
-
-  "asdasdasd" should "asdasdasd" in {
-    Eq.eqv(gcounterInstance[Map, String, Int].merge(Map(), Map("" -> 0)), Map("" -> 0)) shouldBe true
   }
 }
