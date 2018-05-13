@@ -9,7 +9,8 @@ object uptime {
     def getUptime(hostname: String): F[Int]
   }
 
-  class UptimeService[F[_]](client: UptimeClient[F])(implicit A: Applicative[F]) {
+  class UptimeService[F[_]](client: UptimeClient[F])(
+      implicit A: Applicative[F]) {
     def getTotalUptime(hostnames: List[String]): F[Int] =
       hostnames.traverse(client.getUptime).map(_.sum)
   }
@@ -18,7 +19,7 @@ object uptime {
     def getUptime(hostname: String) = ???
   }
 
-  class TestUptimeClient(hosts: Map[String, Int]) extends UptimeClient[Id] { 
+  class TestUptimeClient(hosts: Map[String, Int]) extends UptimeClient[Id] {
     def getUptime(hostname: String): Id[Int] = hosts.getOrElse(hostname, 0)
   }
 }

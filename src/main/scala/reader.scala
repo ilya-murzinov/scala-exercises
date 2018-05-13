@@ -12,10 +12,11 @@ object reader {
   def checkPassword(username: String, password: String): DbReader[Boolean] =
     Reader(db => db.passwords.get(username).contains(password))
 
-  def checkLogin(userId: Int, password: String): DbReader[Boolean] = for {
-    username <- findUsername(userId)
-    result <- username
-      .map(checkPassword(_, password))
-      .getOrElse(false.pure[DbReader])
-  } yield result
+  def checkLogin(userId: Int, password: String): DbReader[Boolean] =
+    for {
+      username <- findUsername(userId)
+      result <- username
+        .map(checkPassword(_, password))
+        .getOrElse(false.pure[DbReader])
+    } yield result
 }

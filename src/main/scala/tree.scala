@@ -24,10 +24,11 @@ trait TreeMonad0 extends Monad[Tree] {
 
   def flatMap[A, B](tree: Tree[A])(f: A => Tree[B]): Tree[B] =
     tree match {
-      case Leaf(v) => f(v) match {
-        case Leaf(fv) => Leaf(fv)
-        case Branch(fl, fr) => Branch(fl, fr)
-      }
+      case Leaf(v) =>
+        f(v) match {
+          case Leaf(fv) => Leaf(fv)
+          case Branch(fl, fr) => Branch(fl, fr)
+        }
 
       case Branch(l, r) => Branch(flatMap(l)(f), flatMap(r)(f))
     }
@@ -37,7 +38,8 @@ trait StackSafeTreeMonad extends StackUnsafeTreeMonad {
   implicit val treeMonad: Monad[Tree] = new TreeMonad0 {
     override def tailRecM[A, B](a: A)(f: A => Tree[Either[A, B]]): Tree[B] = {
       @tailrec
-      def loop(open: List[Tree[Either[A, B]]], closed: List[Tree[B]]): List[Tree[B]] = {
+      def loop(open: List[Tree[Either[A, B]]],
+               closed: List[Tree[B]]): List[Tree[B]] = {
         println(s"open: $open")
         println(s"closed: $closed")
         println()
@@ -45,9 +47,10 @@ trait StackSafeTreeMonad extends StackUnsafeTreeMonad {
           case head :: tail =>
             head match {
               case Leaf(Left(v)) => loop(f(v) :: tail, closed)
-              case Leaf(Right(v)) => loop(tail,
-                if (closed.isEmpty) List(pure(v))
-                else Branch(closed.head, pure(v)) :: closed.tail)
+              case Leaf(Right(v)) =>
+                loop(tail,
+                     if (closed.isEmpty) List(pure(v))
+                     else Branch(closed.head, pure(v)) :: closed.tail)
               case Branch(l, r) =>
                 l match {
                   case Branch(_, _) => loop(l :: r :: tail, closed)

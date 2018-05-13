@@ -12,19 +12,19 @@ object Codec {
 
   def encode[A](value: A)(implicit c: Codec[A]): String =
     c.encode(value)
-  
+
   def decode[A](value: String)(implicit c: Codec[A]): A =
     c.decode(value)
 
   implicit val stringCodec: Codec[String] =
     new Codec[String] {
-    def encode(value: String): String = value
-    def decode(value: String): String = value
-  }
+      def encode(value: String): String = value
+      def decode(value: String): String = value
+    }
 
   implicit val intCodec: Codec[Int] =
     stringCodec.imap(_.toInt, _.toString)
-  
-  implicit val booleanCodec: Codec[Boolean] = 
+
+  implicit val booleanCodec: Codec[Boolean] =
     stringCodec.imap(_.toBoolean, _.toString)
 }

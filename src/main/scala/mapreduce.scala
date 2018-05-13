@@ -13,25 +13,26 @@ object mapreduce {
 
     def parallelFoldMap[B](f: A => B)(implicit M: Monoid[B]): Future[B] = {
       val batchSize = (values.size / cpuCount) + 1
-      
-      Future.sequence(
-        values
-          .grouped(batchSize)
-          .map(batch => Future(batch.foldMap(f)))
-      ).map(_.toVector.foldLeft(M.empty)(M.combine))
+
+      Future
+        .sequence(
+          values
+            .grouped(batchSize)
+            .map(batch => Future(batch.foldMap(f)))
+        )
+        .map(_.toVector.foldLeft(M.empty)(M.combine))
     }
 
-    def parallelFoldMapC[F[_], B](f: A => B)
-      (implicit M: Monad[F], 
-                T: Traverse[Vector], 
-                VF: Foldable[Vector], 
-                MB: Monoid[B]): F[B] = {
+    def parallelFoldMapC[F[_], B](f: A => B)(implicit M: Monad[F],
+                                             T: Traverse[Vector],
+                                             VF: Foldable[Vector],
+                                             MB: Monoid[B]): F[B] = {
       val batchSize = (values.size / cpuCount) + 1
       T.sequence(
-        values
-          .grouped(batchSize)
-          .map(batch => M.pure(batch.foldMap(f)))
-          .toVector)
+          values
+            .grouped(batchSize)
+            .map(batch => M.pure(batch.foldMap(f)))
+            .toVector)
         .map(MB.combineAll)
     }
   }

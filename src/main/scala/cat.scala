@@ -10,5 +10,6 @@ object Cat {
     Show.show(a => s"${a.name} is a ${a.age} year-old ${a.color} cat.")
 
   implicit val catEq: Eq[Cat] =
-    Eq.instance[Cat]((c1, c2) => c1.name == c2.name && c1.age == c2.age && c1.color == c2.color)
+    Eq.instance[Cat]((c1, c2) =>
+      c1.name == c2.name && c1.age == c2.age && c1.color == c2.color)
 }

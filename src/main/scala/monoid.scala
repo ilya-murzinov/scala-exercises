@@ -38,18 +38,21 @@ object SetUnionMonoidInstances {
 object SetSymDiffMonoidInstances {
   implicit def setMonoid[A]: Monoid[Set[A]] = new Monoid[Set[A]] {
     def empty = Set.empty[A]
-    def combine(s1: Set[A], s2: Set[A]): Set[A] = (s1 diff s2) union (s2 diff s1)
+    def combine(s1: Set[A], s2: Set[A]): Set[A] =
+      (s1 diff s2) union (s2 diff s1)
   }
 }
 
 object SuperAdder {
-  def add[A: Monoid](items: List[A]): A = items.fold(Monoid[A].empty)(Monoid[A].combine)
+  def add[A: Monoid](items: List[A]): A =
+    items.fold(Monoid[A].empty)(Monoid[A].combine)
 }
 
 case class Order(totalCost: Double, quantity: Double)
 object Order {
   implicit val orderMonoid: Monoid[Order] = new Monoid[Order] {
     def empty = Order(0, 0)
-    def combine(o1: Order, o2: Order) = Order(o1.totalCost + o2.totalCost, o1.quantity + o2.quantity)
+    def combine(o1: Order, o2: Order) =
+      Order(o1.totalCost + o2.totalCost, o1.quantity + o2.quantity)
   }
 }

@@ -26,7 +26,8 @@ object predicate {
 
     def or(that: Predicate[E, A]): Or[E, A] = Or(this, that)
 
-    def run(implicit SE: Semigroup[E]): A => Either[E, A] = a => apply(a).toEither
+    def run(implicit SE: Semigroup[E]): A => Either[E, A] =
+      a => apply(a).toEither
   }
 
   object Predicate {
@@ -35,26 +36,26 @@ object predicate {
   }
 
   case class Pure[E, A](f: A => Validated[E, A]) extends Predicate[E, A]
-  case class And[E, A](left: Predicate[E, A], right: Predicate[E, A]) extends Predicate[E, A]
-  case class Or[E, A](left: Predicate[E, A], right: Predicate[E, A]) extends Predicate[E, A]
+  case class And[E, A](left: Predicate[E, A], right: Predicate[E, A])
+      extends Predicate[E, A]
+  case class Or[E, A](left: Predicate[E, A], right: Predicate[E, A])
+      extends Predicate[E, A]
 
   def longerThan(n: Int): Predicate[Errors, String] =
-    Predicate.lift(
-      error(s"Must be longer than $n characters"),
-      str => str.length > n)
+    Predicate.lift(error(s"Must be longer than $n characters"),
+                   str => str.length > n)
 
   val alphanumeric: Predicate[Errors, String] =
-    Predicate.lift(
-      error(s"Must be all alphanumeric characters"),
-      str => str.forall(_.isLetterOrDigit))
+    Predicate.lift(error(s"Must be all alphanumeric characters"),
+                   str => str.forall(_.isLetterOrDigit))
 
-  def contains(char: Char): Predicate[Errors, String] = Predicate.lift(
-    error(s"Must contain the character $char"),
-    str => str.contains(char))
+  def contains(char: Char): Predicate[Errors, String] =
+    Predicate.lift(error(s"Must contain the character $char"),
+                   str => str.contains(char))
 
-  def containsOnce(char: Char): Predicate[Errors, String] = Predicate.lift(
-    error(s"Must contain the character $char only once"),
-    str => str.count(c => c == char) == 1)
+  def containsOnce(char: Char): Predicate[Errors, String] =
+    Predicate.lift(error(s"Must contain the character $char only once"),
+                   str => str.count(c => c == char) == 1)
 }
 
 object check {
@@ -75,20 +76,25 @@ object check {
   }
 
   case class Pure[E, A](pred: Predicate[E, A]) extends Check[E, A, A] {
-    def apply(value: A)(implicit SE: Semigroup[E]): Validated[E, A] = pred(value)
+    def apply(value: A)(implicit SE: Semigroup[E]): Validated[E, A] =
+      pred(value)
   }
 
-  case class Map[E, A, B, C](check: Check[E, A, B])(func: B => C) extends Check[E, A, C] {
+  case class Map[E, A, B, C](check: Check[E, A, B])(func: B => C)
+      extends Check[E, A, C] {
     def apply(value: A)(implicit s: Semigroup[E]): Validated[E, C] =
       check(value).map(func)
   }
 
-  case class FlatMap[E, A, B, C](check: Check[E, A, B])(func: B => Check[E, A, C]) extends Check[E, A, C] {
+  case class FlatMap[E, A, B, C](check: Check[E, A, B])(
+      func: B => Check[E, A, C])
+      extends Check[E, A, C] {
     def apply(value: A)(implicit s: Semigroup[E]): Validated[E, C] =
       check(value).withEither(_.flatMap(b => func(b)(value).toEither))
   }
 
-  case class AndThen[E, A, B, C](check: Check[E, A, B])(that: Check[E, B, C]) extends Check[E, A, C] {
+  case class AndThen[E, A, B, C](check: Check[E, A, B])(that: Check[E, B, C])
+      extends Check[E, A, C] {
     def apply(value: A)(implicit s: Semigroup[E]): Validated[E, C] =
       check(value).withEither(_.flatMap(b => that(b).toEither))
   }
@@ -112,10 +118,9 @@ object checks {
       })
       .andThen[String](Check(predicate.Pure[Errors, (String, String)] {
         case (l, r) =>
-          (Check(longerThan(0))(l),
-            Check(longerThan(3) and contains('.'))(r)).mapN((_, _))
-      })
-      .map { case (l, r) => l + "@" + r })
+          (Check(longerThan(0))(l), Check(longerThan(3) and contains('.'))(r))
+            .mapN((_, _))
+      }).map { case (l, r) => l + "@" + r })
       .map(Email)
 
   def createUser(username: String, email: String): Validated[Errors, User] =
@@ -131,22 +136,24 @@ object kleisli {
   def checkPred[A](pred: Predicate[Errors, A]): Check[A, A] =
     Kleisli[Result, A, A](pred.run)
 
-  val usernameCheckK: Check[String, String] = checkPred(longerThan(3) and alphanumeric)
+  val usernameCheckK: Check[String, String] = checkPred(
+    longerThan(3) and alphanumeric)
 
   val emailCheckK: Check[String, Email] =
     checkPred(containsOnce('@'))
       .map[(String, String)](s => {
-      val Array(left, right) = s.split("@")
-      (left, right)
-    })
-    .andThen[String](checkPred(predicate.Pure[Errors, (String, String)] {
-      case (l, r) =>
-        (checkPred(longerThan(0))(l).toValidated,
-          checkPred(longerThan(3) and contains('.'))(r).toValidated).mapN((_, _))
-    })
-    .map { case (l, r) => l + "@" + r })
-    .map(Email)
+        val Array(left, right) = s.split("@")
+        (left, right)
+      })
+      .andThen[String](checkPred(predicate.Pure[Errors, (String, String)] {
+        case (l, r) =>
+          (checkPred(longerThan(0))(l).toValidated,
+           checkPred(longerThan(3) and contains('.'))(r).toValidated)
+            .mapN((_, _))
+      }).map { case (l, r) => l + "@" + r })
+      .map(Email)
 
   def createUserK(username: String, email: String): Validated[Errors, User] =
-    (usernameCheckK(username).toValidated, emailCheckK(email).toValidated).mapN(User)
+    (usernameCheckK(username).toValidated, emailCheckK(email).toValidated)
+      .mapN(User)
 }

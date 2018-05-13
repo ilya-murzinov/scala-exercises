@@ -9,9 +9,9 @@ object transformers {
   type Response[A] = EitherT[Future, String, A]
 
   val powerLevels = Map(
-    "Jazz"      -> 6,
+    "Jazz" -> 6,
     "Bumblebee" -> 8,
-    "Hot Rod"   -> 10
+    "Hot Rod" -> 10
   )
 
   def getPowerLevel(autobot: String): Response[Int] =
@@ -37,7 +37,8 @@ object transformers2 {
   type Response[A] = ReaderT[EitherT[Future, String, ?], Levels, A]
 
   def getPowerLevel(autobot: String): Response[Int] =
-    ReaderT.apply(db => EitherT.fromOption(db.get(autobot), s"$autobot unreachable"))
+    ReaderT.apply(db =>
+      EitherT.fromOption(db.get(autobot), s"$autobot unreachable"))
 
   def canSpecialMove(ally1: String, ally2: String): Response[Boolean] =
     for {
