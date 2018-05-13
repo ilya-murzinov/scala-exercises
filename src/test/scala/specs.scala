@@ -559,44 +559,87 @@ class IntBoundedSemilatticeLawsSpec extends CatsLawsSpec {
 class GCounterSpec extends Spec {
   import cats.Eq
   import cats.kernel.instances.map._
-  import cats.kernel.instances.int._
   import gcounter._
+  import GenMap._
 
-  implicit val intEq: Eq[Int] = cats.kernel.instances.int.catsKernelStdOrderForInt
-  val subj: GCounter[Map, String, Int] = implicitly[GCounter[Map, String, Int]]
+  implicit val intEq: Eq[Int] = (x: Int, y: Int) => x == y
 
   property("increment should add element if it's not present") {
+    import cats.instances.int._
+
     forAll { (s: String, i: Int) =>
       whenever(i > 0) {
-        Eq.eqv(subj.increment(Map.empty)(s, i), Map(s -> i)) shouldBe true
+        Eq.eqv(gcounterInstance[Map, String, Int].increment(Map.empty)(s, i), Map(s -> i)) shouldBe true
       }
     }
   }
 
   property("increment should increment element value if it is present") {
+    import cats.instances.int._
+
     forAll { (s: String, i: Int) =>
       whenever(i > 0) {
-        Eq.eqv(subj.increment(Map(s -> 42))(s, i), Map(s -> (42 + i))) shouldBe true
+        Eq.eqv(gcounterInstance[Map, String, Int].increment(Map(s -> 42))(s, i), Map(s -> (42 + i))) shouldBe true
       }
     }
   }
 
   property("merge should merge maps") {
     import boundedSemilattice._
-    import GenMap._
 
     forAll(genMaps) { case (m1: Map[String, Int], m2: Map[String, Int]) =>
       val expected = m1 ++ m2.map {
         case (k, v) =>
           (k, v.max(m1.getOrElse(k, 0)))
       }
-      Eq.eqv(subj.merge(m1, m2), expected) shouldBe true
+      val res = gcounterInstance[Map, String, Int].merge(m1, m2)
+      println(s"m1: $m1, m2: $m2, EXP: $expected, RES: $res")
+      Eq.eqv(res, expected) shouldBe true
+    }
+  }
+
+  property("merge should be idempotent") {
+    import boundedSemilattice._
+
+    forAll(genMap) { m: Map[String, Int] =>
+      Eq.eqv(gcounterInstance[Map, String, Int].merge(m, m), m) shouldBe true
+    }
+  }
+
+  property("merge should have left identity") {
+    import boundedSemilattice._
+
+    forAll(genMap) { m: Map[String, Int] =>
+      Eq.eqv(gcounterInstance[Map, String, Int].merge(Map.empty, m), m) shouldBe true
+    }
+  }
+
+  property("merge should have right identity") {
+    import boundedSemilattice._
+
+    forAll(genMap) { m: Map[String, Int] =>
+      Eq.eqv(gcounterInstance[Map, String, Int].merge(m, Map.empty), m) shouldBe true
     }
   }
 
   property("total should return sum of values") {
+    import cats.instances.int._
+
     forAll { m: Map[String, Int] =>
-      Eq.eqv(subj.total(m), m.values.sum) shouldBe true
+      Eq.eqv(gcounterInstance[Map, String, Int].total(m), m.values.sum) shouldBe true
     }
+  }
+}
+
+class AAAAA extends Test {
+  import cats.Eq
+  import cats.kernel.instances.map._
+  import gcounter._
+  import boundedSemilattice._
+
+  implicit val intEq: Eq[Int] = (x: Int, y: Int) => x == y
+
+  "asdasdasd" should "asdasdasd" in {
+    Eq.eqv(gcounterInstance[Map, String, Int].merge(Map(), Map("" -> 0)), Map("" -> 0)) shouldBe true
   }
 }
