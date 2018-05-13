@@ -1,5 +1,7 @@
+import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.instances.boolean._
+import cats.kernel.instances.SetPartialOrder
 import cats.tests._
 import cats.kernel.laws.discipline._
 import cats.laws.discipline._
@@ -210,8 +212,9 @@ class CalcSpec extends Spec {
 
   property("evalOne should perform '/' if second operand is not 0") {
     forAll { (i1: Int, i2: Int) =>
-      if (i2 != 0)
-        evalOne("/").run(List(i1, i2)).value shouldBe (List(i1 / i2), i1 / i2)
+      whenever(i2 != 0) {
+        evalOne("/").run(List(i1, i2)).value shouldBe(List(i1 / i2), i1 / i2)
+      }
     }
   }
 
@@ -224,8 +227,9 @@ class CalcSpec extends Spec {
   property("evalAll should perform '+' over a list") {
     forAll { stack: List[Int] =>
       val res = stack.sum
-      if (stack.size >= 2)
-        evalAll((1 until stack.size).map(_ => "+").toList).run(stack).value shouldBe (List(res), res)
+      whenever(stack.size >= 2) {
+        evalAll((1 until stack.size).map(_ => "+").toList).run(stack).value shouldBe(List(res), res)
+      }
     }
   }
 
@@ -243,8 +247,9 @@ class CalcSpec extends Spec {
   property("evalAll should perform '*' over a list") {
     forAll { stack: List[Int] =>
       val res = stack.product
-      if (stack.size >= 2)
-        evalAll((1 until stack.size).map(_ => "*").toList).run(stack).value shouldBe (List(res), res)
+      whenever(stack.size >= 2) {
+        evalAll((1 until stack.size).map(_ => "*").toList).run(stack).value shouldBe(List(res), res)
+      }
     }
   }
 
@@ -322,35 +327,35 @@ class TreeStackUnsafeTailRecMSpec extends Spec with StackUnsafeTreeMonad {
   }
 }
 
-//class TreeStackSafeTailRecMTest extends Test with StackSafeTreeMonad {
-//  import cats.implicits._
-//
-//  "stack safe tailRecM" should "work" in {
-//    val tree: Tree[Int] = Branch(Branch(Leaf(31), Branch(Leaf(11), Leaf(2))), Leaf(12))
-//    tree.tailRecM[Tree, String](_.map(i => Right(i.toString))) shouldBe tree.map(_.toString)
-//  }
-//}
+class TreeStackSafeTailRecMTest extends Test with StackSafeTreeMonad {
+  import cats.implicits._
 
-//class TreeStackSafeTailRecMSpec extends Spec with StackSafeTreeMonad {
-//  import cats.implicits._
-//  import GenTree._
-//
-//  property("stack safe tailRecM should be consistent with map") {
-//    forAll { tree: Tree[Int] =>
-//      tree.tailRecM[Tree, String](_.map(i => Right(i.toString))) shouldBe tree.map(_.toString)
-//    }
-//  }
-//
-//  property("stack safe tailRecM should be consistent with flatMap") {
-//    forAll { tree: Tree[Int] =>
-//      val transform: Int => Tree[Either[Tree[Int], String]] =
-//        (i: Int) => Branch(Leaf(Right(i.toString)), Leaf(Right(i.toString)))
-//
-//      tree.tailRecM[Tree, String](t => t.flatMap(transform)) shouldBe
-//        tree.flatMap(i => Branch(Leaf(i.toString), Leaf(i.toString)))
-//    }
-//  }
-//}
+  "stack safe tailRecM" should "work" ignore {
+    val tree: Tree[Int] = Branch(Branch(Leaf(31), Branch(Leaf(11), Leaf(2))), Leaf(12))
+    tree.tailRecM[Tree, String](_.map(i => Right(i.toString))) shouldBe tree.map(_.toString)
+  }
+}
+
+class TreeStackSafeTailRecMSpec extends Spec with StackSafeTreeMonad {
+  import cats.implicits._
+  import GenTree._
+
+  ignore("stack safe tailRecM should be consistent with map") {
+    forAll { tree: Tree[Int] =>
+      tree.tailRecM[Tree, String](_.map(i => Right(i.toString))) shouldBe tree.map(_.toString)
+    }
+  }
+
+  ignore("stack safe tailRecM should be consistent with flatMap") {
+    forAll { tree: Tree[Int] =>
+      val transform: Int => Tree[Either[Tree[Int], String]] =
+        (i: Int) => Branch(Leaf(Right(i.toString)), Leaf(Right(i.toString)))
+
+      tree.tailRecM[Tree, String](t => t.flatMap(transform)) shouldBe
+        tree.flatMap(i => Branch(Leaf(i.toString), Leaf(i.toString)))
+    }
+  }
+}
 
 class TreeStackUnsafeMonadLawsSpec extends CatsLawsSpec with StackUnsafeTreeMonad {
   import cats.instances.all._
@@ -359,12 +364,12 @@ class TreeStackUnsafeMonadLawsSpec extends CatsLawsSpec with StackUnsafeTreeMona
   checkAll("StackUnsafeMonad[Tree]", MonadTests[Tree].stackUnsafeMonad[String, Int, Boolean])
 }
 
-//class TreeStackSafeMonadLawsSpec extends CatsLawsSpec with StackSafeTreeMonad {
-//  import cats.instances.all._
-//  import GenTree._
-//
-//  checkAll("StackSafeMonad[Tree]", MonadTests[Tree].monad[String, Int, Boolean])
-//}
+class TreeStackSafeMonadLawsSpec extends CatsLawsSpec with StackSafeTreeMonad {
+  import cats.instances.all._
+  import GenTree._
+
+  //checkAll("StackSafeMonad[Tree]", MonadTests[Tree].monad[String, Int, Boolean])
+}
 
 class TransformersTest extends Test {
   import transformers._
@@ -409,5 +414,189 @@ class ReadUserTest extends Test {
 
     readUser(Map("name" -> "Jim")) shouldBe
       Invalid(List("age must be present"))
+  }
+}
+
+class ListFoldableOpsSpec extends Spec {
+  import cats.instances.int._
+  import foldable._
+
+  property("mapF should be consistent with map") {
+    forAll { l: List[Int] =>
+      def f = (i: Int) => i.toString
+      l.mapF(f) shouldBe l.map(f)
+    }
+  }
+
+  property("flatMapF should be consistent with flatMap") {
+    forAll { l: List[Int] =>
+      def f = (i: Int) => i.toString.map(_.toString).toList
+      l.flatMapF(f) shouldBe l.flatMap(f)
+    }
+  }
+
+  property("filterF should be consistent with filter") {
+    forAll { l: List[Int] =>
+      def f = (i: Int) => i % 3 == 0
+      l.filterF(f) shouldBe l.filter(f)
+    }
+  }
+
+  property("sumF should be consistent with sum") {
+    forAll { l: List[Int] => l.sumF shouldBe l.sum }
+  }
+}
+
+class UptimeTest extends Test {
+  import uptime._
+
+  "UptimeService" should "return total uptime" in {
+    val hosts = Map("host1" -> 10, "host2" -> 6)
+    val client = new TestUptimeClient(hosts)
+    val service = new UptimeService(client)
+    val actual = service.getTotalUptime(hosts.keys.toList)
+    val expected = hosts.values.sum
+    actual shouldBe expected
+  }
+}
+
+class FoldMapSpec extends Spec {
+  import scala.concurrent._
+  import scala.concurrent.duration._
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import cats.instances.all._
+  import mapreduce._
+
+  property("foldMap should be consistent with map and fold") {
+    forAll { v: Vector[Int] =>
+      v.foldMap(_.toString) shouldBe v.map(_.toString).mkString
+    }
+  }
+
+  property("parallelFoldMap should be consistent with map and fold") {
+    forAll { v: Vector[Int] =>
+      Await.result(v.parallelFoldMap(_.toString), 5.seconds) shouldBe
+        v.map(_.toString).mkString
+    }
+  }
+
+  property("parallelFoldMapC should be consistent with map and fold") {
+    forAll { v: Vector[Int] =>
+      Await.result(v.parallelFoldMapC[Future, String](_.toString), 5.seconds) shouldBe
+        v.map(_.toString).mkString
+    }
+  }
+}
+
+class ChecksSpec extends Spec {
+  import cats.data.NonEmptyList
+  import predicate._
+  import checks._
+
+  property("usernameCheck should validate username") {
+    forAll { s: String =>
+      val res =
+        if (s.length > 3 && s.forall(_.isLetterOrDigit))
+          Valid(s)
+        else if (s.length <= 3 && s.forall(_.isLetterOrDigit))
+          Invalid(error("Must be longer than 3 characters"))
+        else if (s.length > 3 && !s.forall(_.isLetterOrDigit))
+          Invalid(error("Must be all alphanumeric characters"))
+        else
+          Invalid(NonEmptyList.of(
+            "Must be longer than 3 characters",
+            "Must be all alphanumeric characters"))
+
+      usernameCheck(s) shouldBe res
+    }
+  }
+}
+
+class CheckTest extends Test {
+  import checks._
+
+  "emailCheck" should "check email" in {
+    emailCheck("aasd@b.as") shouldBe Valid(Email("aasd@b.as"))
+  }
+
+  "createUser" should "create valid user" in {
+    createUser("Noel", "noel@underscore.io") shouldBe
+      Valid(User("Noel", Email("noel@underscore.io")))
+  }
+
+  "createUser" should "not create invalid user" in {
+    createUser("", "dave@underscore@io") shouldBe
+      Invalid(
+        NonEmptyList.of(
+          "Must be longer than 3 characters",
+          "Must contain the character @ only once"))
+  }
+}
+
+class KleisliChecksSpec extends Spec {
+  import checks._
+  import kleisli._
+
+  property("createUserK should be consistent with createUser") {
+    forAll { (username: String, email: String) =>
+      createUserK(username, email) shouldBe createUser(username, email)
+    }
+  }
+}
+
+class IntBoundedSemilatticeLawsSpec extends CatsLawsSpec {
+  import gcounter.boundedSemilattice._
+  import cats.kernel.instances.int._
+  import org.scalacheck._
+
+  implicit val arbInt: Arbitrary[Int] = Arbitrary(Gen.posNum[Int])
+  implicit val order: SetPartialOrder[Int] = new SetPartialOrder[Int]
+
+  checkAll("BoundedSemilattice[Int]", BoundedSemilatticeTests[Int].boundedSemilattice)
+  checkAll("BoundedSemilattice[Set]", BoundedSemilatticeTests[Set[Int]].boundedSemilattice)
+}
+
+class GCounterSpec extends Spec {
+  import cats.Eq
+  import cats.kernel.instances.map._
+  import cats.kernel.instances.int._
+  import gcounter._
+
+  implicit val intEq: Eq[Int] = cats.kernel.instances.int.catsKernelStdOrderForInt
+  val subj: GCounter[Map, String, Int] = implicitly[GCounter[Map, String, Int]]
+
+  property("increment should add element if it's not present") {
+    forAll { (s: String, i: Int) =>
+      whenever(i > 0) {
+        Eq.eqv(subj.increment(Map.empty)(s, i), Map(s -> i)) shouldBe true
+      }
+    }
+  }
+
+  property("increment should increment element value if it is present") {
+    forAll { (s: String, i: Int) =>
+      whenever(i > 0) {
+        Eq.eqv(subj.increment(Map(s -> 42))(s, i), Map(s -> (42 + i))) shouldBe true
+      }
+    }
+  }
+
+  property("merge should merge maps") {
+    import boundedSemilattice._
+    import GenMap._
+
+    forAll(genMaps) { case (m1: Map[String, Int], m2: Map[String, Int]) =>
+      val expected = m1 ++ m2.map {
+        case (k, v) =>
+          (k, v.max(m1.getOrElse(k, 0)))
+      }
+      Eq.eqv(subj.merge(m1, m2), expected) shouldBe true
+    }
+  }
+
+  property("total should return sum of values") {
+    forAll { m: Map[String, Int] =>
+      Eq.eqv(subj.total(m), m.values.sum) shouldBe true
+    }
   }
 }

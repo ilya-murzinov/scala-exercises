@@ -33,3 +33,17 @@ object GenTree {
   implicit def arbTree[A: Arbitrary]: Arbitrary[Tree[A]] =
     Arbitrary(genTree[A])
 }
+
+object GenMap {
+  val genMap: Gen[Map[String, Int]] =
+    for {
+      keys <- Gen.containerOf[List, String](Gen.alphaStr.filterNot(_.isEmpty))
+      values <- Gen.containerOfN[List, Int](keys.size, Gen.posNum[Int])
+    } yield keys.zip(values).toMap
+
+  val genMaps: Gen[(Map[String, Int], Map[String, Int])] =
+    for {
+      m1 <- genMap
+      m2 <- genMap
+    } yield (m1, m2)
+}
