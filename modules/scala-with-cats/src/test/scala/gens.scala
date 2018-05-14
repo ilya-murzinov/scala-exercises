@@ -14,14 +14,16 @@ object GenBox {
 }
 
 object GenTree {
-  def genLeaf[A: Arbitrary]: Gen[Tree[A]] = for {
-    e <- Arbitrary.arbitrary[A]
-  } yield Leaf(e)
+  def genLeaf[A: Arbitrary]: Gen[Tree[A]] =
+    for {
+      e <- Arbitrary.arbitrary[A]
+    } yield Leaf(e)
 
-  def genBranch[A: Arbitrary]: Gen[Tree[A]] = for {
-    l <- Gen.sized(h => Gen.resize(h/2, genTree[A]))
-    r <- Gen.sized(h => Gen.resize(h/2, genTree[A]))
-  } yield Branch(l, r)
+  def genBranch[A: Arbitrary]: Gen[Tree[A]] =
+    for {
+      l <- Gen.sized(h => Gen.resize(h / 2, genTree[A]))
+      r <- Gen.sized(h => Gen.resize(h / 2, genTree[A]))
+    } yield Branch(l, r)
 
   def genTree[A: Arbitrary]: Gen[Tree[A]] = Gen.sized { height =>
     if (height <= 0)
