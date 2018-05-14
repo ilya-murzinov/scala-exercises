@@ -1,3 +1,3 @@
-[![CircleCI](https://circleci.com/gh/ilya-murzinov/scala-with-cats-exercises/tree/master.png?style=shield)](https://circleci.com/gh/ilya-murzinov/scala-with-cats-exercises)
+[![CircleCI](https://circleci.com/gh/ilya-murzinov/scala-exercises/tree/master.png?style=shield)](https://circleci.com/gh/ilya-murzinov/scala-exercises)
 
-# Exercises from [Scala with Cats](https://github.com/underscoreio/advanced-scala) book
+# Various exercises, pet projects etc.
